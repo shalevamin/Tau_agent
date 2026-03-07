@@ -98,9 +98,9 @@ git clone https://github.com/shalevamin/Tau_agent.git && cd Tau_agent && bash in
 
 ```
 Tau_agent/
-├── openclaw-main/                   # Core agent framework (modified)
+├── tau-agent-main/                   # Core agent framework (modified)
 │   ├── apps/macos/                  # macOS Swift app (onboarding, UI)
-│   │   └── Sources/OpenClaw/
+│   │   └── Sources/TauAgent/
 │   │       ├── Onboarding.swift               # Onboarding flow
 │   │       ├── OnboardingView+UltimateSetup.swift  # Auto-setup: toolchain, skills, perms
 │   │       ├── AgentWorkspace.swift           # Workspace templates (AGENTS.md, MEMORY.md)
@@ -177,13 +177,13 @@ cd Tau_agent
 ### Step 2: Install Core Dependencies
 
 ```bash
-cd openclaw-main
+cd tau-agent-main
 pnpm install
 ```
 
 ### Step 3: Install the Ultimate Toolchain
 
-This installs Codex CLI, browser-use (Python), and OpenViking into `~/.openclaw/`:
+This installs Codex CLI, browser-use (Python), and OpenViking into `~/.tau-agent/`:
 
 ```bash
 node scripts/install-ultimate-toolchain.mjs
@@ -200,7 +200,7 @@ node scripts/install-ultimate-toolchain.mjs
 After installation, add the managed bin to your PATH:
 
 ```bash
-export PATH="$HOME/.openclaw/bin:$PATH"
+export PATH="$HOME/.tau-agent/bin:$PATH"
 ```
 
 ### Step 4: Install Skills (290+ Skills)
@@ -213,8 +213,8 @@ This will:
 
 1. Clone/update skill repositories from GitHub
 2. Scan for `SKILL.md` files
-3. Install all skills into `~/.openclaw/skills/`
-4. Generate a manifest at `~/.openclaw/skills/.tua-installed-skills.json`
+3. Install all skills into `~/.tau-agent/skills/`
+4. Generate a manifest at `~/.tau-agent/skills/.tua-installed-skills.json`
 
 ### Step 5: Install Playwright Browsers
 
@@ -237,7 +237,7 @@ Add to your shell profile (`~/.zshrc` or `~/.bashrc`):
 
 ```bash
 echo 'export OPENAI_API_KEY="sk-your-key-here"' >> ~/.zshrc
-echo 'export PATH="$HOME/.openclaw/bin:$PATH"' >> ~/.zshrc
+echo 'export PATH="$HOME/.tau-agent/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
@@ -248,7 +248,7 @@ source ~/.zshrc
 ### 1. Launch the Gateway
 
 ```bash
-cd openclaw-main
+cd tau-agent-main
 pnpm dev
 ```
 
@@ -361,7 +361,7 @@ Tau Agent uses this priority order for web tasks:
 1. **`browser-use`** — Native Playwright automation via Python
 2. **`cua_run`** — GPT-5.4 CUA Responses API (native or code mode)
 3. **Computer Use** — `computer_screenshot` → `computer_mouse` → `computer_type` (raw screen interaction)
-4. **Chrome Extension Relay** — Fallback via `~/.openclaw/browser/chrome-extension`
+4. **Chrome Extension Relay** — Fallback via `~/.tau-agent/browser/chrome-extension`
 
 ### Screen Recording
 
@@ -390,7 +390,7 @@ Action: notifications_list → Pending notifications
 
 ## 🧩 Skills
 
-Skills are modular capabilities stored in `~/.openclaw/skills/`. Each skill has a `SKILL.md` file with instructions.
+Skills are modular capabilities stored in `~/.tau-agent/skills/`. Each skill has a `SKILL.md` file with instructions.
 
 ### Built-in Tua Skills
 
@@ -413,7 +413,7 @@ Skills are modular capabilities stored in `~/.openclaw/skills/`. Each skill has 
 
 ### Adding Custom Skills
 
-Create a folder under `~/.openclaw/skills/my-skill/` with a `SKILL.md`:
+Create a folder under `~/.tau-agent/skills/my-skill/` with a `SKILL.md`:
 
 ```markdown
 ---
@@ -455,12 +455,12 @@ autoAllowSkills = true
 
 ### Environment Variables
 
-| Variable                      | Required | Description                          |
-| ----------------------------- | -------- | ------------------------------------ |
-| `OPENAI_API_KEY`              | ✅       | Powers all AI features               |
-| `TUA_SKILLS_SOURCE_ROOT`      | ❌       | Override skills source directory     |
-| `OPENCLAW_MANAGED_SKILLS_DIR` | ❌       | Override skills install directory    |
-| `CUA_RESPONSES_MODE`          | ❌       | CUA mode: `auto`, `fallback`, `live` |
+| Variable                       | Required | Description                          |
+| ------------------------------ | -------- | ------------------------------------ |
+| `OPENAI_API_KEY`               | ✅       | Powers all AI features               |
+| `TUA_SKILLS_SOURCE_ROOT`       | ❌       | Override skills source directory     |
+| `TAU_AGENT_MANAGED_SKILLS_DIR` | ❌       | Override skills install directory    |
+| `CUA_RESPONSES_MODE`           | ❌       | CUA mode: `auto`, `fallback`, `live` |
 
 ---
 
@@ -481,7 +481,7 @@ autoAllowSkills = true
 ### Project Structure
 
 ```
-openclaw-main/
+tau-agent-main/
 ├── apps/macos/          # macOS Swift app
 ├── src/                 # Core TypeScript runtime
 │   ├── agents/          # Agent framework
@@ -498,7 +498,7 @@ openclaw-main/
 ### Running Tests
 
 ```bash
-cd openclaw-main
+cd tau-agent-main
 pnpm test
 ```
 
@@ -526,9 +526,9 @@ Tau Agent stands on the shoulders of these amazing open-source projects. Huge th
 
 ### Core Framework
 
-| Project                                           | Author/Org                                                      | License | Contribution                                                         |
-| ------------------------------------------------- | --------------------------------------------------------------- | ------- | -------------------------------------------------------------------- |
-| [OpenClaw](https://github.com/nichochar/openclaw) | [@nichochar](https://github.com/nichochar) (Nicholas Charriere) | MIT     | Core agent framework, gateway, macOS app, skill system, node pairing |
+| Project                                            | Author/Org                                                      | License | Contribution                                                         |
+| -------------------------------------------------- | --------------------------------------------------------------- | ------- | -------------------------------------------------------------------- |
+| [TauAgent](https://github.com/nichochar/tau-agent) | [@nichochar](https://github.com/nichochar) (Nicholas Charriere) | MIT     | Core agent framework, gateway, macOS app, skill system, node pairing |
 
 ### AI & Automation
 
@@ -554,8 +554,8 @@ Tau Agent stands on the shoulders of these amazing open-source projects. Huge th
 | [Anthropic Skills](https://github.com/anthropics/skills)    | [Anthropic](https://github.com/anthropics) | MIT     | Claude skill patterns (referenced)   |
 | [Claude Skills](https://github.com/Jeffallan/claude-skills) | [@Jeffallan](https://github.com/Jeffallan) | MIT     | Community Claude skills (referenced) |
 | [Agency Agents](https://github.com/agency-agents)           | Community                                  | Various | Agent orchestration patterns         |
-| [Awesome OpenClaw Skills](https://github.com/community)     | Community                                  | Various | Community skill collection           |
-| [Awesome OpenClaw Usecases](https://github.com/community)   | Community                                  | Various | Community use cases                  |
+| [Awesome TauAgent Skills](https://github.com/community)     | Community                                  | Various | Community skill collection           |
+| [Awesome TauAgent Usecases](https://github.com/community)   | Community                                  | Various | Community use cases                  |
 | [Naruto Skills](https://github.com/community)               | Community                                  | Various | Creative agent skills                |
 | [PM Skills](https://github.com/community)                   | Community                                  | Various | Project management skills            |
 | [Paperclip](https://github.com/community)                   | Community                                  | Various | Automation patterns                  |

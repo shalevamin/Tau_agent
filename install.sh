@@ -46,7 +46,7 @@ DIM='\033[2m'
 NC='\033[0m'
 
 INSTALL_DIR="${TAU_INSTALL_DIR:-$HOME/Tau_agent}"
-MANAGED_DIR="$HOME/.openclaw"
+MANAGED_DIR="$HOME/.tau-agent"
 BIN_DIR="$MANAGED_DIR/bin"
 SKILLS_DIR="$MANAGED_DIR/skills"
 
@@ -257,7 +257,7 @@ fi
 
 # Existing Tau Agent repo
 step "Checking for existing Tau Agent installation..."
-if [[ -d "$INSTALL_DIR/openclaw-main" ]]; then
+if [[ -d "$INSTALL_DIR/tau-agent-main" ]]; then
   FOUND_REPO="yes"
   ok "Found existing installation at $INSTALL_DIR"
 else
@@ -583,7 +583,7 @@ else
 fi
 progress_bar
 
-cd "$INSTALL_DIR/openclaw-main"
+cd "$INSTALL_DIR/tau-agent-main"
 
 # ── Step 7: Node dependencies (THE BIG ONE) ──────────────────
 step "[7/$TOTAL_STEPS] Installing Node.js dependencies (this may take a few minutes)..."
@@ -642,7 +642,7 @@ divider
 # Save model selection to config
 step "Writing configuration (model: $SELECTED_MODEL)..."
 mkdir -p "$MANAGED_DIR"
-CONFIG_FILE="$MANAGED_DIR/openclaw.json"
+CONFIG_FILE="$MANAGED_DIR/tau-agent.json"
 if [[ -f "$CONFIG_FILE" ]]; then
   # Update existing config — use node for safe JSON manipulation
   node -e "
@@ -685,10 +685,10 @@ fi
 
 CHANGED_SHELL=false
 
-if ! grep -q '\.openclaw/bin' "$SHELL_RC" 2>/dev/null; then
+if ! grep -q '\.tau-agent/bin' "$SHELL_RC" 2>/dev/null; then
   echo '' >> "$SHELL_RC"
   echo '# Tau Agent — managed tools' >> "$SHELL_RC"
-  echo 'export PATH="$HOME/.openclaw/bin:$PATH"' >> "$SHELL_RC"
+  echo 'export PATH="$HOME/.tau-agent/bin:$PATH"' >> "$SHELL_RC"
   CHANGED_SHELL=true
 fi
 
@@ -742,9 +742,9 @@ check_tool "Python ($($PYTHON_CMD --version 2>/dev/null || echo 'missing'))" "$P
 check_tool "Git"                                                         "git --version"
 check_tool "Codex CLI"                                                   "test -x $BIN_DIR/codex"
 check_tool "browser-use"                                                 "test -x $BIN_DIR/browser-use"
-check_tool "Tau Agent repo"                                              "test -d $INSTALL_DIR/openclaw-main"
+check_tool "Tau Agent repo"                                              "test -d $INSTALL_DIR/tau-agent-main"
 check_tool "Skills ($SKILL_COUNT installed)"                             "test -d $SKILLS_DIR"
-check_tool "Config file"                                                 "test -f $MANAGED_DIR/openclaw.json"
+check_tool "Config file"                                                 "test -f $MANAGED_DIR/tau-agent.json"
 
 echo ""
 divider
@@ -802,7 +802,7 @@ case "${LAUNCH_CHOICE:-1}" in
     echo -e "  ${CYAN}The dashboard will open in your browser.${NC}"
     echo -e "  ${DIM}Press Ctrl+C to stop the gateway.${NC}"
     echo ""
-    cd "$INSTALL_DIR/openclaw-main"
+    cd "$INSTALL_DIR/tau-agent-main"
     pnpm dev
     ;;
   2)
@@ -811,7 +811,7 @@ case "${LAUNCH_CHOICE:-1}" in
     echo ""
     echo -e "  ${BOLD}To connect WhatsApp:${NC}"
     echo ""
-    echo -e "  1. Start the gateway:  ${CYAN}cd $INSTALL_DIR/openclaw-main && pnpm dev${NC}"
+    echo -e "  1. Start the gateway:  ${CYAN}cd $INSTALL_DIR/tau-agent-main && pnpm dev${NC}"
     echo -e "  2. Open the Dashboard in your browser"
     echo -e "  3. Go to ${BOLD}Channels → WhatsApp${NC}"
     echo -e "  4. Scan the QR code with WhatsApp on your phone"
@@ -819,7 +819,7 @@ case "${LAUNCH_CHOICE:-1}" in
     echo -e "  ${DIM}Or start the gateway now?${NC}"
     prompt_read START_GW "  Start gateway? (Y/N) [Y]: "
     if [[ "${START_GW:-Y}" =~ ^[Yy]$ ]]; then
-      cd "$INSTALL_DIR/openclaw-main"
+      cd "$INSTALL_DIR/tau-agent-main"
       pnpm dev
     fi
     ;;
@@ -831,14 +831,14 @@ case "${LAUNCH_CHOICE:-1}" in
     echo ""
     echo -e "  1. Create a bot via ${CYAN}@BotFather${NC} on Telegram"
     echo -e "  2. Copy the bot token"
-    echo -e "  3. Start the gateway:  ${CYAN}cd $INSTALL_DIR/openclaw-main && pnpm dev${NC}"
+    echo -e "  3. Start the gateway:  ${CYAN}cd $INSTALL_DIR/tau-agent-main && pnpm dev${NC}"
     echo -e "  4. Open Dashboard → ${BOLD}Channels → Telegram${NC}"
     echo -e "  5. Paste your bot token"
     echo ""
     echo -e "  ${DIM}Or start the gateway now?${NC}"
     prompt_read START_GW "  Start gateway? (Y/N) [Y]: "
     if [[ "${START_GW:-Y}" =~ ^[Yy]$ ]]; then
-      cd "$INSTALL_DIR/openclaw-main"
+      cd "$INSTALL_DIR/tau-agent-main"
       pnpm dev
     fi
     ;;
@@ -850,14 +850,14 @@ case "${LAUNCH_CHOICE:-1}" in
     echo ""
     echo -e "  1. Create a bot at ${CYAN}https://discord.com/developers/applications${NC}"
     echo -e "  2. Copy the bot token"
-    echo -e "  3. Start the gateway:  ${CYAN}cd $INSTALL_DIR/openclaw-main && pnpm dev${NC}"
+    echo -e "  3. Start the gateway:  ${CYAN}cd $INSTALL_DIR/tau-agent-main && pnpm dev${NC}"
     echo -e "  4. Open Dashboard → ${BOLD}Channels → Discord${NC}"
     echo -e "  5. Paste your bot token and configure permissions"
     echo ""
     echo -e "  ${DIM}Or start the gateway now?${NC}"
     prompt_read START_GW "  Start gateway? (Y/N) [Y]: "
     if [[ "${START_GW:-Y}" =~ ^[Yy]$ ]]; then
-      cd "$INSTALL_DIR/openclaw-main"
+      cd "$INSTALL_DIR/tau-agent-main"
       pnpm dev
     fi
     ;;
@@ -869,14 +869,14 @@ case "${LAUNCH_CHOICE:-1}" in
     echo ""
     echo -e "  1. Create a Slack app at ${CYAN}https://api.slack.com/apps${NC}"
     echo -e "  2. Configure bot scopes and install to workspace"
-    echo -e "  3. Start the gateway:  ${CYAN}cd $INSTALL_DIR/openclaw-main && pnpm dev${NC}"
+    echo -e "  3. Start the gateway:  ${CYAN}cd $INSTALL_DIR/tau-agent-main && pnpm dev${NC}"
     echo -e "  4. Open Dashboard → ${BOLD}Channels → Slack${NC}"
     echo -e "  5. Enter your Slack tokens"
     echo ""
     echo -e "  ${DIM}Or start the gateway now?${NC}"
     prompt_read START_GW "  Start gateway? (Y/N) [Y]: "
     if [[ "${START_GW:-Y}" =~ ^[Yy]$ ]]; then
-      cd "$INSTALL_DIR/openclaw-main"
+      cd "$INSTALL_DIR/tau-agent-main"
       pnpm dev
     fi
     ;;
@@ -893,7 +893,7 @@ case "${LAUNCH_CHOICE:-1}" in
     echo ""
     echo -e "  ${BOLD}To launch later:${NC}"
     echo ""
-    echo -e "    ${CYAN}cd $INSTALL_DIR/openclaw-main && pnpm dev${NC}"
+    echo -e "    ${CYAN}cd $INSTALL_DIR/tau-agent-main && pnpm dev${NC}"
     echo ""
     echo -e "  ${MAGENTA}${BOLD}  Tau Agent — Because one agent should be able to do everything. 🤖${NC}"
     echo ""
