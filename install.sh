@@ -3,11 +3,36 @@
 # ║          🤖 Tau Agent — Ultimate Onboarding Installer        ║
 # ║                                                              ║
 # ║  Usage:                                                      ║
-# ║    curl -fsSL https://raw.githubusercontent.com/             ║
-# ║      shalevamin/Tau_agent/main/install.sh | bash             ║
+# ║    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent  ║
+# ║      .com/shalevamin/Tau_agent/main/install.sh)"             ║
 # ╚══════════════════════════════════════════════════════════════╝
-set -euo pipefail
+set -eo pipefail
 
+# ── TTY handling ──────────────────────────────────────────────
+# When run via 'bash -c "$(curl ...)"' stdin is the terminal.
+# When run via 'curl ... | bash' stdin is the pipe — we must
+# open /dev/tty explicitly for interactive reads.
+if [[ -t 0 ]]; then
+  # stdin is a terminal — reads work normally
+  TTY_FD=0
+else
+  # stdin is a pipe — open /dev/tty on fd 3
+  exec 3</dev/tty
+  TTY_FD=3
+fi
+
+# Wrapper that reads from the correct fd
+prompt_read() {
+  # Usage: prompt_read VARNAME "prompt text"
+  local varname="$1"
+  shift
+  local prompt="$*"
+  if [[ "$TTY_FD" -eq 0 ]]; then
+    read -rp "$prompt" "$varname"
+  else
+    read -rp "$prompt" "$varname" <&3
+  fi
+}
 # ── Colors & Formatting ──────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -78,7 +103,7 @@ divider() {
 
 press_enter() {
   echo ""
-  read -rp "  $(echo -e "${DIM}")Press Enter to continue...$(echo -e "${NC}") " _ </dev/tty
+  prompt_read _ "  $(echo -e "${DIM}")Press Enter to continue...$(echo -e "${NC}") "
 }
 
 # ══════════════════════════════════════════════════════════════
@@ -120,7 +145,7 @@ echo ""
 echo -e "    ${GREEN}[Y]${NC} Yes, I understand — proceed with installation"
 echo -e "    ${RED}[N]${NC} No, cancel installation"
 echo ""
-read -rp "  Your choice (Y/N): " CONSENT </dev/tty
+prompt_read CONSENT "  Your choice (Y/N): "
 
 if [[ ! "$CONSENT" =~ ^[Yy]$ ]]; then
   echo ""
@@ -312,7 +337,7 @@ osascript -e 'tell application "System Events" to key code 0' &>/dev/null 2>&1 |
 open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility" &>/dev/null 2>&1 || true
 
 echo -e "    ${DIM}Waiting for you to grant Accessibility access...${NC}"
-read -rp "    Press Enter once granted (or to skip)... " _ </dev/tty
+prompt_read _ "    Press Enter once granted (or to skip)... "
 
 # Check if we have Accessibility
 if osascript -e 'tell application "System Events" to return name of first process' &>/dev/null 2>&1; then
@@ -342,7 +367,7 @@ rm -f /tmp/.tau-perm-test.png &>/dev/null 2>&1 || true
 open "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture" &>/dev/null 2>&1 || true
 
 echo -e "    ${DIM}Waiting for you to grant Screen Recording access...${NC}"
-read -rp "    Press Enter once granted (or to skip)... " _ </dev/tty
+prompt_read _ "    Press Enter once granted (or to skip)... "
 
 if screencapture -x /tmp/.tau-perm-test2.png &>/dev/null 2>&1 && [[ -f /tmp/.tau-perm-test2.png ]]; then
   ok "Screen Recording permission granted"
@@ -376,7 +401,7 @@ if [[ -n "$OPENAI_KEY" ]]; then
   echo -e "    ${GREEN}[Y]${NC} Yes, use existing key"
   echo -e "    ${BLUE}[N]${NC} No, enter a different key"
   echo ""
-  read -rp "  Your choice (Y/N): " USE_EXISTING </dev/tty
+  prompt_read USE_EXISTING "  Your choice (Y/N): "
   if [[ "$USE_EXISTING" =~ ^[Nn]$ ]]; then
     OPENAI_KEY=""
   fi
@@ -384,7 +409,7 @@ fi
 
 if [[ -z "$OPENAI_KEY" ]]; then
   echo ""
-  read -rp "  🔑 Enter your OpenAI API Key (sk-...): " OPENAI_KEY </dev/tty
+  prompt_read OPENAI_KEY "  🔑 Enter your OpenAI API Key (sk-...): "
 fi
 
 if [[ -z "$OPENAI_KEY" ]]; then
@@ -407,7 +432,7 @@ echo -e "    ${BLUE}[3]${NC} ${BOLD}gpt-4.1${NC}        — Proven, cost-effecti
 echo -e "    ${BLUE}[4]${NC} ${BOLD}o3${NC}             — Reasoning model, great for complex tasks"
 echo -e "    ${DIM}[5]${NC} ${DIM}Custom${NC}         — Enter a custom model name"
 echo ""
-read -rp "  Your choice (1-5) [1]: " MODEL_CHOICE </dev/tty
+prompt_read MODEL_CHOICE "  Your choice (1-5) [1]: "
 
 case "${MODEL_CHOICE:-1}" in
   1) SELECTED_MODEL="openai/gpt-5.4" ;;
@@ -415,7 +440,7 @@ case "${MODEL_CHOICE:-1}" in
   3) SELECTED_MODEL="openai/gpt-4.1" ;;
   4) SELECTED_MODEL="openai/o3" ;;
   5)
-    read -rp "  Enter model name (e.g. openai/gpt-5.4): " CUSTOM_MODEL </dev/tty
+    prompt_read CUSTOM_MODEL "  Enter model name (e.g. openai/gpt-5.4): "
     SELECTED_MODEL="${CUSTOM_MODEL:-openai/gpt-5.4}"
     ;;
   *) SELECTED_MODEL="openai/gpt-5.4" ;;
@@ -693,7 +718,7 @@ echo -e "    ${BLUE}[5]${NC} 💬 ${BOLD}Connect Slack${NC}            — Set u
 echo -e "    ${BLUE}[6]${NC} 💻 ${BOLD}Use Codex CLI${NC}            — Start coding with Codex"
 echo -e "    ${DIM}[7]${NC} ${DIM}Exit${NC}                       — ${DIM}Exit installer${NC}"
 echo ""
-read -rp "  Your choice (1-7) [1]: " LAUNCH_CHOICE </dev/tty
+prompt_read LAUNCH_CHOICE "  Your choice (1-7) [1]: "
 
 case "${LAUNCH_CHOICE:-1}" in
   1)
@@ -718,7 +743,7 @@ case "${LAUNCH_CHOICE:-1}" in
     echo -e "  4. Scan the QR code with WhatsApp on your phone"
     echo ""
     echo -e "  ${DIM}Or start the gateway now?${NC}"
-    read -rp "  Start gateway? (Y/N) [Y]: " START_GW </dev/tty
+    prompt_read START_GW "  Start gateway? (Y/N) [Y]: "
     if [[ "${START_GW:-Y}" =~ ^[Yy]$ ]]; then
       cd "$INSTALL_DIR/openclaw-main"
       pnpm dev
@@ -737,7 +762,7 @@ case "${LAUNCH_CHOICE:-1}" in
     echo -e "  5. Paste your bot token"
     echo ""
     echo -e "  ${DIM}Or start the gateway now?${NC}"
-    read -rp "  Start gateway? (Y/N) [Y]: " START_GW </dev/tty
+    prompt_read START_GW "  Start gateway? (Y/N) [Y]: "
     if [[ "${START_GW:-Y}" =~ ^[Yy]$ ]]; then
       cd "$INSTALL_DIR/openclaw-main"
       pnpm dev
@@ -756,7 +781,7 @@ case "${LAUNCH_CHOICE:-1}" in
     echo -e "  5. Paste your bot token and configure permissions"
     echo ""
     echo -e "  ${DIM}Or start the gateway now?${NC}"
-    read -rp "  Start gateway? (Y/N) [Y]: " START_GW </dev/tty
+    prompt_read START_GW "  Start gateway? (Y/N) [Y]: "
     if [[ "${START_GW:-Y}" =~ ^[Yy]$ ]]; then
       cd "$INSTALL_DIR/openclaw-main"
       pnpm dev
@@ -775,7 +800,7 @@ case "${LAUNCH_CHOICE:-1}" in
     echo -e "  5. Enter your Slack tokens"
     echo ""
     echo -e "  ${DIM}Or start the gateway now?${NC}"
-    read -rp "  Start gateway? (Y/N) [Y]: " START_GW </dev/tty
+    prompt_read START_GW "  Start gateway? (Y/N) [Y]: "
     if [[ "${START_GW:-Y}" =~ ^[Yy]$ ]]; then
       cd "$INSTALL_DIR/openclaw-main"
       pnpm dev

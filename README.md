@@ -24,7 +24,7 @@
 ## ⚡ One-Line Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/shalevamin/Tau_agent/main/install.sh | bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/shalevamin/Tau_agent/main/install.sh)"
 ```
 
 > This single command installs **everything**: Homebrew, Node.js, pnpm, Python, Git, Codex CLI, browser-use, Playwright, 290+ skills — then asks for your OpenAI API key and requests macOS permissions. Done. ✨
