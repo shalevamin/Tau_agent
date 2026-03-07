@@ -257,7 +257,7 @@ fi
 
 # Existing Tau Agent repo
 step "Checking for existing Tau Agent installation..."
-if [[ -d "$INSTALL_DIR/tau-agent-main" ]]; then
+if [[ -d "$INSTALL_DIR/.git" ]]; then
   FOUND_REPO="yes"
   ok "Found existing installation at $INSTALL_DIR"
 else
@@ -574,7 +574,8 @@ progress_bar
 if [[ -n "$FOUND_REPO" ]]; then
   step "[6/$TOTAL_STEPS] Updating Tau Agent..."
   cd "$INSTALL_DIR"
-  git pull --ff-only 2>/dev/null || true
+  git fetch --depth 1 origin main 2>/dev/null || true
+  git reset --hard origin/main 2>/dev/null || true
   ok "Updated to latest"
 else
   step "[6/$TOTAL_STEPS] Cloning Tau Agent from GitHub..."
