@@ -451,15 +451,67 @@ ok "Selected model: $SELECTED_MODEL"
 press_enter
 
 # ══════════════════════════════════════════════════════════════
-# PHASE 4 — INSTALLATION
+# PHASE 4 — INSTALLATION (with progress tracking)
 # ══════════════════════════════════════════════════════════════
 
 banner
 phase "PHASE 4/6 — Installing Everything"
 
-# Install Homebrew if needed
+# ── Progress bar helpers ──────────────────────────────────────
+TOTAL_STEPS=9
+CURRENT_STEP=0
+
+progress_bar() {
+  CURRENT_STEP=$((CURRENT_STEP + 1))
+  local pct=$((CURRENT_STEP * 100 / TOTAL_STEPS))
+  local filled=$((pct / 2))
+  local empty=$((50 - filled))
+  local bar="${GREEN}"
+  for ((i=0; i<filled; i++)); do bar+="█"; done
+  bar+="${DIM}"
+  for ((i=0; i<empty; i++)); do bar+="░"; done
+  bar+="${NC}"
+  echo -e "\r  ${BOLD}[${bar}${BOLD}] ${pct}%${NC}  "
+}
+
+# Spinner for long-running background tasks
+spin_while() {
+  local label="$1"
+  shift
+  local pid
+  local spinchars='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+  local tmplog="/tmp/.tau-install-$$.log"
+
+  # Run command in background, capture output
+  "$@" > "$tmplog" 2>&1 &
+  pid=$!
+
+  local i=0
+  local last_line=""
+  while kill -0 "$pid" 2>/dev/null; do
+    local c="${spinchars:i%${#spinchars}:1}"
+    # Show last line of output for real-time feedback
+    if [[ -f "$tmplog" ]]; then
+      last_line=$(tail -1 "$tmplog" 2>/dev/null | cut -c1-60 || true)
+    fi
+    printf "\r    ${CYAN}${c}${NC}  %-62s" "${label}${last_line:+ — ${DIM}${last_line}${NC}}" >&2
+    i=$((i + 1))
+    sleep 0.15
+  done
+
+  # Clear spinner line
+  printf "\r%-80s\r" "" >&2
+
+  # Check exit code
+  wait "$pid"
+  local exit_code=$?
+  rm -f "$tmplog"
+  return $exit_code
+}
+
+# ── Step 1: Homebrew ──────────────────────────────────────────
 if [[ -z "$FOUND_BREW" ]]; then
-  step "Installing Homebrew..."
+  step "[1/$TOTAL_STEPS] Installing Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   if [[ -f /opt/homebrew/bin/brew ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -468,100 +520,122 @@ if [[ -z "$FOUND_BREW" ]]; then
   fi
   ok "Homebrew installed"
 else
-  skip "Homebrew already installed"
+  step "[1/$TOTAL_STEPS] Homebrew"
+  skip "Already installed"
 fi
+progress_bar
 
-# Install/upgrade Node.js if needed
+# ── Step 2: Node.js ───────────────────────────────────────────
 if [[ -z "$FOUND_NODE" ]]; then
-  step "Installing Node.js..."
+  step "[2/$TOTAL_STEPS] Installing Node.js..."
   brew install node
   ok "Node.js installed ($(node --version))"
 else
-  skip "Node.js already installed ($FOUND_NODE)"
+  step "[2/$TOTAL_STEPS] Node.js"
+  skip "Already installed ($FOUND_NODE)"
 fi
+progress_bar
 
-# Install pnpm if needed
+# ── Step 3: pnpm ─────────────────────────────────────────────
 if [[ -z "$FOUND_PNPM" ]]; then
-  step "Installing pnpm..."
-  npm install -g pnpm
+  step "[3/$TOTAL_STEPS] Installing pnpm..."
+  npm install -g pnpm 2>&1 | tail -2
   ok "pnpm installed ($(pnpm --version))"
 else
-  skip "pnpm already installed ($FOUND_PNPM)"
+  step "[3/$TOTAL_STEPS] pnpm"
+  skip "Already installed ($FOUND_PNPM)"
 fi
+progress_bar
 
-# Install Python if needed
+# ── Step 4: Python ────────────────────────────────────────────
 if [[ -z "$FOUND_PYTHON" ]]; then
-  step "Installing Python 3..."
+  step "[4/$TOTAL_STEPS] Installing Python 3..."
   brew install python@3.12
   PYTHON_CMD="python3"
   ok "Python installed ($($PYTHON_CMD --version))"
 else
-  skip "Python already installed ($FOUND_PYTHON)"
+  step "[4/$TOTAL_STEPS] Python"
+  skip "Already installed ($FOUND_PYTHON)"
 fi
+progress_bar
 
-# Install Git if needed
+# ── Step 5: Git ───────────────────────────────────────────────
 if [[ -z "$FOUND_GIT" ]]; then
-  step "Installing Git..."
+  step "[5/$TOTAL_STEPS] Installing Git..."
   brew install git
   ok "Git installed"
 else
-  skip "Git already installed"
+  step "[5/$TOTAL_STEPS] Git"
+  skip "Already installed"
 fi
+progress_bar
 
-divider
-
-# Clone or update repo
+# ── Step 6: Clone / update repo ──────────────────────────────
 if [[ -n "$FOUND_REPO" ]]; then
-  step "Updating existing Tau Agent..."
+  step "[6/$TOTAL_STEPS] Updating Tau Agent..."
   cd "$INSTALL_DIR"
   git pull --ff-only 2>/dev/null || true
   ok "Updated to latest"
 else
-  step "Cloning Tau Agent from GitHub..."
-  git clone https://github.com/shalevamin/Tau_agent.git "$INSTALL_DIR"
+  step "[6/$TOTAL_STEPS] Cloning Tau Agent from GitHub..."
+  git clone --depth 1 https://github.com/shalevamin/Tau_agent.git "$INSTALL_DIR"
   ok "Cloned to $INSTALL_DIR"
 fi
+progress_bar
 
 cd "$INSTALL_DIR/openclaw-main"
 
-divider
-
-# Node dependencies
-step "Installing Node.js dependencies..."
-pnpm install --no-frozen-lockfile 2>&1 | tail -3
-ok "Dependencies installed"
-
-divider
-
-# Toolchain
-if [[ -n "$FOUND_CODEX" ]] && [[ -n "$FOUND_BROWSERUSE" ]]; then
-  skip "Toolchain already installed (codex + browser-use found)"
-  step "Refreshing toolchain..."
+# ── Step 7: Node dependencies (THE BIG ONE) ──────────────────
+step "[7/$TOTAL_STEPS] Installing Node.js dependencies (this may take a few minutes)..."
+echo ""
+if spin_while "Installing packages" pnpm install --no-frozen-lockfile; then
+  ok "Dependencies installed"
+else
+  warn "Some dependencies may have failed — continuing anyway"
 fi
-step "Installing Ultimate Toolchain (Codex, browser-use, OpenViking)..."
-mkdir -p "$BIN_DIR"
-node scripts/install-ultimate-toolchain.mjs 2>&1 | tail -8
-ok "Toolchain installed to $MANAGED_DIR"
+progress_bar
 
-divider
+# ── Step 8: Toolchain ────────────────────────────────────────
+step "[8/$TOTAL_STEPS] Installing Toolchain (Codex, browser-use, OpenViking)..."
+echo ""
+mkdir -p "$BIN_DIR"
+if spin_while "Setting up toolchain" node scripts/install-ultimate-toolchain.mjs; then
+  ok "Toolchain installed to $MANAGED_DIR"
+else
+  warn "Toolchain install had issues — some tools may not be available"
+fi
+progress_bar
+
+# ── Step 9: Skills + Playwright ──────────────────────────────
+step "[9/$TOTAL_STEPS] Syncing skills & installing Playwright..."
+echo ""
 
 # Skills
-step "Syncing 290+ skills from GitHub..."
-node scripts/install-ultimate-skills.mjs 2>&1 | tail -5
-SKILL_COUNT=$(find "$SKILLS_DIR" -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
-SKILL_COUNT=$((SKILL_COUNT > 0 ? SKILL_COUNT - 1 : 0))
-ok "$SKILL_COUNT skills installed to $SKILLS_DIR"
-
-divider
+if spin_while "Syncing 290+ skills" node scripts/install-ultimate-skills.mjs; then
+  SKILL_COUNT=$(find "$SKILLS_DIR" -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+  SKILL_COUNT=$((SKILL_COUNT > 0 ? SKILL_COUNT - 1 : 0))
+  ok "$SKILL_COUNT skills installed"
+else
+  SKILL_COUNT=0
+  warn "Skills sync had issues"
+fi
 
 # Playwright
 if [[ -n "$FOUND_PLAYWRIGHT" ]]; then
   skip "Playwright already installed"
 else
-  step "Installing Playwright Chromium..."
-  npx -y playwright install chromium 2>&1 | tail -3
-  ok "Playwright Chromium installed"
+  if spin_while "Installing Playwright Chromium" npx -y playwright install chromium; then
+    ok "Playwright Chromium installed"
+  else
+    warn "Playwright install had issues — CUA browser features may not work"
+  fi
 fi
+progress_bar
+
+echo ""
+echo -e "  ${GREEN}${BOLD}████████████████████████████████████████████████████${NC} ${GREEN}${BOLD}100%${NC}"
+echo ""
+echo -e "  ${GREEN}${BOLD}✨ All components installed!${NC}"
 
 divider
 
