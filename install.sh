@@ -645,35 +645,30 @@ step "Writing configuration (model: $SELECTED_MODEL)..."
 mkdir -p "$MANAGED_DIR"
 CONFIG_FILE="$MANAGED_DIR/tau-agent.json"
 if [[ -f "$CONFIG_FILE" ]]; then
-  # Update existing config — use node for safe JSON manipulation
   node -e "
     const fs = require('fs');
-    const cfg = JSON.parse(fs.readFileSync('$CONFIG_FILE', 'utf8'));
-    cfg.model = '$SELECTED_MODEL';
-    if (!cfg.providers) cfg.providers = {};
-    if (!cfg.providers.openai) cfg.providers.openai = {};
+    let cfg = {};
+    if (fs.existsSync('$CONFIG_FILE')) {
+      try {
+        cfg = JSON.parse(fs.readFileSync('$CONFIG_FILE', 'utf8'));
+      } catch (e) {}
+    }
+    if (!cfg.agents) cfg.agents = {};
+    if (!cfg.agents.defaults) cfg.agents.defaults = {};
+    if (!cfg.agents.defaults.model) cfg.agents.defaults.model = {};
+    cfg.agents.defaults.model.primary = '$SELECTED_MODEL';
+    
+    // Remove invalid top-level keys if they exist
+    delete cfg.model;
+    delete cfg.providers;
+    
+    if (!cfg.exec) cfg.exec = {};
+    cfg.exec.ask = 'always';
+    cfg.exec.security = 'full';
+    cfg.exec.autoAllowSkills = true;
+    
     fs.writeFileSync('$CONFIG_FILE', JSON.stringify(cfg, null, 2) + '\n');
   " 2>/dev/null || true
-else
-  cat > "$CONFIG_FILE" << JSONEOF
-{
-  "model": "$SELECTED_MODEL",
-  "providers": {
-    "openai": {}
-  },
-  "agents": {
-    "defaults": {
-      "maxSpawnDepth": 3,
-      "maxChildrenPerAgent": 8
-    }
-  },
-  "exec": {
-    "ask": "always",
-    "security": "full",
-    "autoAllowSkills": true
-  }
-}
-JSONEOF
 fi
 ok "Config written to $CONFIG_FILE"
 
@@ -686,10 +681,12 @@ fi
 
 CHANGED_SHELL=false
 
-if ! grep -q '\.tau-agent/bin' "$SHELL_RC" 2>/dev/null; then
+if ! grep -q 'TAU_AGENT_HOME' "$SHELL_RC" 2>/dev/null; then
   echo '' >> "$SHELL_RC"
-  echo '# Tau Agent — managed tools' >> "$SHELL_RC"
-  echo 'export PATH="$HOME/.tau-agent/bin:$PATH"' >> "$SHELL_RC"
+  echo '# Tau Agent Environment' >> "$SHELL_RC"
+  echo "export TAU_AGENT_HOME=\"\$INSTALL_DIR\"" >> "$SHELL_RC"
+  echo "export OPENCLAW_STATE_DIR=\"\$HOME/.tau-agent\"" >> "$SHELL_RC"
+  echo "export PATH=\"\$TAU_AGENT_HOME/bin:\$HOME/.tau-agent/bin:\$PATH\"" >> "$SHELL_RC"
   CHANGED_SHELL=true
 fi
 
@@ -804,7 +801,7 @@ case "${LAUNCH_CHOICE:-1}" in
     echo -e "  ${DIM}Press Ctrl+C to stop the gateway.${NC}"
     echo ""
     cd "$INSTALL_DIR/tau-agent-main"
-    pnpm dev
+    OPENCLAW_STATE_DIR="$MANAGED_DIR" pnpm dev gateway
     ;;
   2)
     echo ""
@@ -812,7 +809,7 @@ case "${LAUNCH_CHOICE:-1}" in
     echo ""
     echo -e "  ${BOLD}To connect WhatsApp:${NC}"
     echo ""
-    echo -e "  1. Start the gateway:  ${CYAN}cd $INSTALL_DIR/tau-agent-main && pnpm dev${NC}"
+    echo -e "  1. Start the gateway:  ${CYAN}cd $INSTALL_DIR/tau-agent-main && OPENCLAW_STATE_DIR=\"$MANAGED_DIR\" pnpm dev gateway${NC}"
     echo -e "  2. Open the Dashboard in your browser"
     echo -e "  3. Go to ${BOLD}Channels → WhatsApp${NC}"
     echo -e "  4. Scan the QR code with WhatsApp on your phone"
@@ -821,7 +818,7 @@ case "${LAUNCH_CHOICE:-1}" in
     prompt_read START_GW "  Start gateway? (Y/N) [Y]: "
     if [[ "${START_GW:-Y}" =~ ^[Yy]$ ]]; then
       cd "$INSTALL_DIR/tau-agent-main"
-      pnpm dev
+      OPENCLAW_STATE_DIR="$MANAGED_DIR" pnpm dev gateway
     fi
     ;;
   3)
