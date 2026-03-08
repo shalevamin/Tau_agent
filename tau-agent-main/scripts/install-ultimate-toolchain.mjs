@@ -4,7 +4,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 
 const homeDir = os.homedir();
-const managedRoot = path.join(homeDir, ".openclaw");
+const managedRoot = path.join(homeDir, ".tau-agent");
 const binDir = path.join(managedRoot, "bin");
 const toolsRoot = path.join(managedRoot, "tools");
 const npmPrefix = path.join(toolsRoot, "npm-global");

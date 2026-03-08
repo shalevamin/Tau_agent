@@ -35,9 +35,9 @@ const repoRoot = path.resolve(scriptDir, "..");
 const workspaceRoot = process.env.TUA_SKILLS_SOURCE_ROOT
   ? path.resolve(process.env.TUA_SKILLS_SOURCE_ROOT)
   : path.resolve(repoRoot, "..");
-const targetRoot = process.env.OPENCLAW_MANAGED_SKILLS_DIR
-  ? path.resolve(process.env.OPENCLAW_MANAGED_SKILLS_DIR)
-  : path.join(os.homedir(), ".openclaw", "skills");
+const targetRoot = process.env.TAU_AGENT_MANAGED_SKILLS_DIR
+  ? path.resolve(process.env.TAU_AGENT_MANAGED_SKILLS_DIR)
+  : path.join(os.homedir(), ".tau-agent", "skills");
 
 async function exists(targetPath) {
   try {

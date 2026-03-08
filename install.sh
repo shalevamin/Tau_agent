@@ -613,8 +613,8 @@ echo ""
 
 # Skills
 if spin_while "Syncing 290+ skills" node scripts/install-ultimate-skills.mjs; then
-  SKILL_COUNT=$(find "$SKILLS_DIR" -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
-  SKILL_COUNT=$((SKILL_COUNT > 0 ? SKILL_COUNT - 1 : 0))
+  SKILL_COUNT=$(find "$SKILLS_DIR" -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ' || echo 0)
+  SKILL_COUNT=$((SKILL_COUNT > 0 ? SKILL_COUNT - 1 : 0)) || true
   ok "$SKILL_COUNT skills installed"
 else
   SKILL_COUNT=0
