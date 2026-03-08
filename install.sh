@@ -797,10 +797,16 @@ case "${LAUNCH_CHOICE:-1}" in
     echo ""
     step "Starting Tau Agent gateway..."
     echo ""
-    echo -e "  ${CYAN}The dashboard will open in your browser.${NC}"
+    echo -e "  ${CYAN}The dashboard will automatically open in your browser.${NC}"
+    echo -e "  ${BOLD}Dashboard URL:${NC} http://127.0.0.1:18789/"
     echo -e "  ${DIM}Press Ctrl+C to stop the gateway.${NC}"
     echo ""
     cd "$INSTALL_DIR/tau-agent-main"
+    if command -v open >/dev/null 2>&1; then
+      (sleep 2 && open "http://127.0.0.1:18789/") &
+    elif command -v xdg-open >/dev/null 2>&1; then
+      (sleep 2 && xdg-open "http://127.0.0.1:18789/") &
+    fi
     OPENCLAW_STATE_DIR="$MANAGED_DIR" pnpm dev gateway --force
     ;;
   2)
@@ -810,7 +816,7 @@ case "${LAUNCH_CHOICE:-1}" in
     echo -e "  ${BOLD}To connect WhatsApp:${NC}"
     echo ""
     echo -e "  1. Start the gateway:  ${CYAN}cd $INSTALL_DIR/tau-agent-main && OPENCLAW_STATE_DIR=\"$MANAGED_DIR\" pnpm dev gateway --force${NC}"
-    echo -e "  2. Open the Dashboard in your browser"
+    echo -e "  2. Open the Dashboard: ${BOLD}http://127.0.0.1:18789/${NC}"
     echo -e "  3. Go to ${BOLD}Channels → WhatsApp${NC}"
     echo -e "  4. Scan the QR code with WhatsApp on your phone"
     echo ""
@@ -818,6 +824,11 @@ case "${LAUNCH_CHOICE:-1}" in
     prompt_read START_GW "  Start gateway? (Y/N) [Y]: "
     if [[ "${START_GW:-Y}" =~ ^[Yy]$ ]]; then
       cd "$INSTALL_DIR/tau-agent-main"
+      if command -v open >/dev/null 2>&1; then
+        (sleep 2 && open "http://127.0.0.1:18789/") &
+      elif command -v xdg-open >/dev/null 2>&1; then
+        (sleep 2 && xdg-open "http://127.0.0.1:18789/") &
+      fi
       OPENCLAW_STATE_DIR="$MANAGED_DIR" pnpm dev gateway --force
     fi
     ;;
