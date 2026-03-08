@@ -801,7 +801,7 @@ case "${LAUNCH_CHOICE:-1}" in
     echo -e "  ${DIM}Press Ctrl+C to stop the gateway.${NC}"
     echo ""
     cd "$INSTALL_DIR/tau-agent-main"
-    OPENCLAW_STATE_DIR="$MANAGED_DIR" pnpm dev gateway
+    OPENCLAW_STATE_DIR="$MANAGED_DIR" pnpm dev gateway --force
     ;;
   2)
     echo ""
@@ -809,7 +809,7 @@ case "${LAUNCH_CHOICE:-1}" in
     echo ""
     echo -e "  ${BOLD}To connect WhatsApp:${NC}"
     echo ""
-    echo -e "  1. Start the gateway:  ${CYAN}cd $INSTALL_DIR/tau-agent-main && OPENCLAW_STATE_DIR=\"$MANAGED_DIR\" pnpm dev gateway${NC}"
+    echo -e "  1. Start the gateway:  ${CYAN}cd $INSTALL_DIR/tau-agent-main && OPENCLAW_STATE_DIR=\"$MANAGED_DIR\" pnpm dev gateway --force${NC}"
     echo -e "  2. Open the Dashboard in your browser"
     echo -e "  3. Go to ${BOLD}Channels → WhatsApp${NC}"
     echo -e "  4. Scan the QR code with WhatsApp on your phone"
@@ -818,7 +818,7 @@ case "${LAUNCH_CHOICE:-1}" in
     prompt_read START_GW "  Start gateway? (Y/N) [Y]: "
     if [[ "${START_GW:-Y}" =~ ^[Yy]$ ]]; then
       cd "$INSTALL_DIR/tau-agent-main"
-      OPENCLAW_STATE_DIR="$MANAGED_DIR" pnpm dev gateway
+      OPENCLAW_STATE_DIR="$MANAGED_DIR" pnpm dev gateway --force
     fi
     ;;
   3)
